@@ -4,7 +4,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/manus/upm/pkg/manager"
+	"github.com/arc2898/Universal-Package-Manager/pkg/manager"
 )
 
 // SnapManager manages Snap packages.

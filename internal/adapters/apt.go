@@ -4,7 +4,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/manus/upm/pkg/manager"
+	"github.com/arc2898/Universal-Package-Manager/pkg/manager"
 )
 
 // AptManager manages Debian and Ubuntu packages.

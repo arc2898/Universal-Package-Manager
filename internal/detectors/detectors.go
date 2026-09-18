@@ -1,7 +1,7 @@
 package detectors
 
 import (
-	"github.com/manus/upm/pkg/manager"
+	"github.com/arc2898/Universal-Package-Manager/pkg/manager"
 	"os/exec"
 )
 

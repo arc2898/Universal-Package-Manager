@@ -1,14 +1,39 @@
 # Universal Package Manager (UPM)
 
 [![Go](https://img.shields.io/badge/Go-1.22.2-00ADD8?logo=go&logoColor=white)](https://go.dev/)
-[![Shell](https://img.shields.io/badge/Shell-install%20script-4EAA25?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-UPM is a Linux command-line tool written in Go that provides one interface for common package-management operations. It detects available APT, DNF, Pacman, Snap, and Flatpak backends. Unqualified install and remove operations prefer the native manager identified from `/etc/os-release`; bulk operations select an explicit manager.
+UPM is a Linux command-line tool written in Go that provides a unified interface for common package-management operations across APT, DNF, Pacman, Snap, and Flatpak backends.
+
+[![Version](https://img.shields.io/badge/version-0.2.0-00ADD8)](https://github.com/arc2898/Universal-Package-Manager/releases)
 
 ## Features
 
 UPM supports installation, removal, real package searches, bulk installation and removal, full updates of detected managers, re-detection of known managers, operation logs, and self-removal of the installed binary. Package-manager operations are executed with argument-based process APIs rather than shell interpolation.
+
+### Supported Package Managers
+
+**System Managers:**
+- **APT** - Debian/Ubuntu packages
+- **DNF** - Fedora/RHEL/CentOS/RPM-based systems
+- **Pacman** - Arch Linux/Manjaro packages
+- **RPM** - Direct RPM package management
+- **Snap** - Snap packages
+- **Flatpak** - Flatpak applications and runtimes
+- **Homebrew** - macOS packages
+- **Winget** - Windows packages (winget)
+- **Chocolatey** - Windows packages (choco)
+- **Scoop** - Windows packages (scoop)
+
+**Language-Specific Managers:**
+- **Cargo** - Rust packages
+- **NPM** - Node.js packages
+- **Pip** - Python packages
+- **Gem** - Ruby packages
+
+### New Features
+- **Fallback search**: If a package is not found in one manager, UPM tries other available managers automatically
+- **Cross-platform support**: Works on Linux, macOS, and Windows
 
 ## Installation
 
@@ -83,7 +108,7 @@ To add a manager, create an adapter in `internal/adapters/`, implement `manager.
 .
 ├── main.go                    # CLI entry point and argument validation
 ├── internal/
-│   ├── adapters/              # APT, DNF, Pacman, Snap, and Flatpak adapters
+│   ├── adapters/              # APT, DNF, Pacman, Snap, Flatpak, RPM, Homebrew, Winget, Chocolatey, Scoop, Cargo, NPM, Pip, and Gem adapters
 │   ├── core/                  # Manager selection and operation orchestration
 │   ├── detectors/             # Availability detection
 │   └── logger/                # Operation log handling

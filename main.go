@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/manus/upm/internal/core"
-	"github.com/manus/upm/internal/logger"
+	"github.com/arc2898/Universal-Package-Manager/internal/core"
+	"github.com/arc2898/Universal-Package-Manager/internal/logger"
 )
 
 const version = "0.2.0"

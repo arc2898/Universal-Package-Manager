@@ -7,9 +7,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/manus/upm/internal/adapters"
-	"github.com/manus/upm/internal/detectors"
-	"github.com/manus/upm/pkg/manager"
+	"github.com/arc2898/Universal-Package-Manager/internal/adapters"
+	"github.com/arc2898/Universal-Package-Manager/internal/detectors"
+	"github.com/arc2898/Universal-Package-Manager/pkg/manager"
 )
 
 type UPM struct {
@@ -24,6 +24,15 @@ func NewUPM() *UPM {
 	d.Register(&adapters.FlatpakManager{})
 	d.Register(&adapters.DnfManager{})
 	d.Register(&adapters.PacmanManager{})
+	d.Register(&adapters.RpmManager{})
+	d.Register(&adapters.HomebrewManager{})
+	d.Register(&adapters.WingetManager{})
+	d.Register(&adapters.ChocolateyManager{})
+	d.Register(&adapters.ScoopManager{})
+	d.Register(&adapters.CargoManager{})
+	d.Register(&adapters.NpmManager{})
+	d.Register(&adapters.PipManager{})
+	d.Register(&adapters.GemManager{})
 	return &UPM{detector: d}
 }
 
@@ -67,6 +76,7 @@ func (u *UPM) Search(pkgName string) error {
 	}
 
 	var failures []error
+	found := false
 	fmt.Printf("Searching for '%s' across all managers...\n", pkgName)
 	for _, m := range u.managers {
 		results, err := m.Search(pkgName)
@@ -74,11 +84,17 @@ func (u *UPM) Search(pkgName string) error {
 			failures = append(failures, fmt.Errorf("%s search: %w", m.Name(), err))
 			continue
 		}
-		for _, result := range results {
-			fmt.Printf("[%s] %s: %s\n", result.Source, result.Name, result.Description)
+		if len(results) > 0 {
+			found = true
+			for _, result := range results {
+				fmt.Printf("[%s] %s: %s\n", result.Source, result.Name, result.Description)
+			}
 		}
 	}
-	return errors.Join(failures...)
+	if !found {
+		return errors.Join(failures...)
+	}
+	return nil
 }
 
 func (u *UPM) UpdateAll() error {
