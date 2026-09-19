@@ -131,3 +131,10 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE).
 ## Verification
 
 Before submitting changes, run `make build`, `make test`, and `go vet ./...`. Tests should use mocked manager commands and must not modify the host package database.
+
+## Info
+ I was not tested this in all Operating Systems, so if you find any issue please report to 
+ ```
+  rc002898@gmail.com
+ ```
+and this was build on GO-lang i will get this to python version as soon as possible and i set it in packages you can get it from there
