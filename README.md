@@ -3,7 +3,7 @@
 [![Go](https://img.shields.io/badge/Go-1.22.2-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-UPM is a Linux command-line tool written in Go that provides a unified interface for common package-management operations across APT, DNF, Pacman, Snap, and Flatpak backends.
+UPM is a Linux command-line tool written in Go that provides a unified interface for common package-management operations across APT, DNF, Pacman, Snap, Flatpak, and other package manager backends.
 
 [![Version](https://img.shields.io/badge/version-0.2.0-00ADD8)](https://github.com/arc2898/Universal-Package-Manager/releases)
 
@@ -18,6 +18,8 @@ UPM supports installation, removal, real package searches, bulk installation and
 - **DNF** - Fedora/RHEL/CentOS/RPM-based systems
 - **Pacman** - Arch Linux/Manjaro packages
 - **RPM** - Direct RPM package management
+- **XBPS** - Void Linux packages
+- **Zypper** - openSUSE/SUSE packages
 - **Snap** - Snap packages
 - **Flatpak** - Flatpak applications and runtimes
 - **Homebrew** - macOS packages
@@ -32,8 +34,11 @@ UPM supports installation, removal, real package searches, bulk installation and
 - **Gem** - Ruby packages
 
 ### New Features
+
 - **Fallback search**: If a package is not found in one manager, UPM tries other available managers automatically
 - **Cross-platform support**: Works on Linux, macOS, and Windows
+- **Operation logs**: All operations are logged to `/var/log/upm.log`
+- **Self-removal**: `upm -r` removes the installed UPM binary
 
 ## Installation
 
@@ -67,7 +72,7 @@ upm -v                  Show the version
 upm -h                  Show help
 ```
 
-Examples:
+### Examples
 
 ```bash
 upm install neovim
@@ -83,7 +88,7 @@ Bulk arguments must contain complete manager/package pairs. Package names are co
 upm -b install apt git,vim snap code
 ```
 
-UPM may request administrator privileges for system-wide APT, DNF, Pacman, and Snap operations. Flatpak operations use the normal Flatpak command and therefore follow Flatpak’s system/user behavior.
+UPM may request administrator privileges for system-wide APT, DNF, Pacman, and Snap operations. Flatpak operations use the normal Flatpak command and therefore follow Flatpak's system/user behavior.
 
 ## Development
 
@@ -102,13 +107,13 @@ go vet ./...
 
 To add a manager, create an adapter in `internal/adapters/`, implement `manager.Manager`, register it in `internal/core/core.go`, and add tests for command construction and output parsing. Tests must not invoke real package managers or mutate the host system.
 
-## Project structure
+### Project Structure
 
 ```text
 .
 ├── main.go                    # CLI entry point and argument validation
 ├── internal/
-│   ├── adapters/              # APT, DNF, Pacman, Snap, Flatpak, RPM, Homebrew, Winget, Chocolatey, Scoop, Cargo, NPM, Pip, and Gem adapters
+│   ├── adapters/              # APT, DNF, Pacman, Snap, Flatpak, RPM, Homebrew, Winget, Chocolatey, Scoop, Cargo, NPM, Pip, Gem, and additional managers
 │   ├── core/                  # Manager selection and operation orchestration
 │   ├── detectors/             # Availability detection
 │   └── logger/                # Operation log handling
@@ -131,10 +136,3 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE).
 ## Verification
 
 Before submitting changes, run `make build`, `make test`, and `go vet ./...`. Tests should use mocked manager commands and must not modify the host package database.
-
-## Info
- I was not tested this in all Operating Systems, so if you find any issue please report to 
- ```
-  rc002898@gmail.com
- ```
-and this was build on GO-lang i will get this to python version as soon as possible and i set it in packages you can get it from there

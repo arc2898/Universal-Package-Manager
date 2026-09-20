@@ -33,6 +33,11 @@ func NewUPM() *UPM {
 	d.Register(&adapters.NpmManager{})
 	d.Register(&adapters.PipManager{})
 	d.Register(&adapters.GemManager{})
+	// New adapters for parity with Python version
+	d.Register(&adapters.XbpsManager{})
+	d.Register(&adapters.ZypperManager{})
+	d.Register(&adapters.PortageManager{})
+	d.Register(&adapters.MasManager{})
 	return &UPM{detector: d}
 }
 

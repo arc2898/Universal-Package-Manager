@@ -1,7 +1,6 @@
 package adapters
 
 import (
-	"os"
 	"os/exec"
 
 	"github.com/arc2898/Universal-Package-Manager/pkg/manager"
@@ -83,11 +82,4 @@ func (f *FlatpakManager) Search(pkgName string) ([]manager.SearchResult, error) 
 
 func (f *FlatpakManager) Update() error {
 	return runCommand("flatpak", "update", "-y")
-}
-
-func runCommand(name string, args ...string) error {
-	command := exec.Command(name, args...)
-	command.Stdout = os.Stdout
-	command.Stderr = os.Stderr
-	return command.Run()
 }
