@@ -3,7 +3,7 @@
 [![Go](https://img.shields.io/badge/Go-1.22.2-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-UPM is a Linux command-line tool written in Go that provides a unified interface for common package-management operations across APT, DNF, Pacman, Snap, Flatpak, and other package manager backends.
+UPM is command-line tool written in Go that provides a unified interface for common package-management operations across  package manager backends.
 
 [![Version](https://img.shields.io/badge/version-0.2.0-00ADD8)](https://github.com/arc2898/Universal-Package-Manager/releases)
 
