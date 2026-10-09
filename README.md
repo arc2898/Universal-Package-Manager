@@ -136,3 +136,6 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE).
 ## Verification
 
 Before submitting changes, run `make build`, `make test`, and `go vet ./...`. Tests should use mocked manager commands and must not modify the host package database.
+
+## Future 
+This project will shift to Pythin and C also trying to make everything done by single command in setup, also focusing on stability and package search.
