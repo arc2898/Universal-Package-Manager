@@ -137,7 +137,7 @@ func (u *UPM) bulk(items map[string][]string, action string) error {
 				failures = append(failures, fmt.Errorf("%s: %w", managerName, err))
 				continue
 			}
-			fmt.Printf("%sing %s via %s...\n", strings.Title(action), pkgName, managerName)
+			fmt.Printf("%sing %s via %s...\n", titleAction(action), pkgName, managerName)
 			var operationErr error
 			if action == "install" {
 				operationErr = m.Install(pkgName)
@@ -201,6 +201,13 @@ func nativeManagerPreference() []string {
 	default:
 		return nil
 	}
+}
+
+func titleAction(action string) string {
+	if action == "" {
+		return ""
+	}
+	return strings.ToUpper(action[:1]) + action[1:]
 }
 
 func validatePackageName(pkgName string) error {

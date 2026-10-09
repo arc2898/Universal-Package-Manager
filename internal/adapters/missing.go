@@ -81,7 +81,10 @@ func (z *ZypperManager) Search(pkgName string) ([]manager.SearchResult, error) {
 }
 
 func (z *ZypperManager) Update() error {
-	return runSystemCommand("zypper", "refresh", "&&", "zypper", "update", "-y")
+	if err := runSystemCommand("zypper", "refresh"); err != nil {
+		return err
+	}
+	return runSystemCommand("zypper", "update", "-y")
 }
 
 // PortageManager manages packages on Gentoo.
@@ -120,7 +123,10 @@ func (p *PortageManager) Search(pkgName string) ([]manager.SearchResult, error) 
 }
 
 func (p *PortageManager) Update() error {
-	return runSystemCommand("emerge", "--sync", "&&", "emerge", "-uDN", "@world")
+	if err := runSystemCommand("emerge", "--sync"); err != nil {
+		return err
+	}
+	return runSystemCommand("emerge", "-uDN", "@world")
 }
 
 // MasManager manages Mac App Store packages using mas.
