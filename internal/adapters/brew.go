@@ -42,5 +42,8 @@ func (h *HomebrewManager) Search(pkgName string) ([]manager.SearchResult, error)
 }
 
 func (h *HomebrewManager) Update() error {
-	return runCommand("brew", "update")
+	if err := runCommand("brew", "update"); err != nil {
+		return err
+	}
+	return runCommand("brew", "upgrade")
 }

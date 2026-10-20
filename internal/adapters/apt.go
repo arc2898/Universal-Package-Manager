@@ -42,5 +42,8 @@ func (a *AptManager) Search(pkgName string) ([]manager.SearchResult, error) {
 }
 
 func (a *AptManager) Update() error {
-	return runSystemCommand("apt", "update")
+	if err := runSystemCommand("apt", "update"); err != nil {
+		return err
+	}
+	return runSystemCommand("apt", "upgrade", "-y")
 }

@@ -20,14 +20,14 @@ func (g *GemManager) Install(pkgName string) error {
 	if err := validatePackageName(pkgName); err != nil {
 		return err
 	}
-	return runSystemCommand("gem", "install", pkgName)
+	return runCommand("gem", "install", pkgName)
 }
 
 func (g *GemManager) Remove(pkgName string) error {
 	if err := validatePackageName(pkgName); err != nil {
 		return err
 	}
-	return runSystemCommand("gem", "uninstall", pkgName)
+	return runCommand("gem", "uninstall", pkgName)
 }
 
 func (g *GemManager) Search(pkgName string) ([]manager.SearchResult, error) {
@@ -42,5 +42,5 @@ func (g *GemManager) Search(pkgName string) ([]manager.SearchResult, error) {
 }
 
 func (g *GemManager) Update() error {
-	return runSystemCommand("gem", "update")
+	return runCommand("gem", "update")
 }

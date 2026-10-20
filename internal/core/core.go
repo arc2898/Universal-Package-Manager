@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/arc2898/Universal-Package-Manager/internal/adapters"
@@ -108,6 +109,17 @@ func (u *UPM) UpdateAll() error {
 	}
 	var failures []error
 	for _, m := range u.managers {
+		switch m.Name() {
+		case "rpm":
+			fmt.Println("Skipping rpm: direct RPM has no repository-wide update operation; use the distribution's package manager.")
+			continue
+		case "cargo":
+			fmt.Println("Skipping cargo: 'cargo update' changes dependencies in the current project, not globally installed packages.")
+			continue
+		case "pip":
+			fmt.Println("Skipping pip: pip has no safe, standard command to upgrade every installed package.")
+			continue
+		}
 		fmt.Printf("Updating %s...\n", m.Name())
 		if err := m.Update(); err != nil {
 			failures = append(failures, fmt.Errorf("%s update: %w", m.Name(), err))
@@ -156,6 +168,11 @@ func (u *UPM) UninstallSelf() error {
 	executable, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("locate executable: %w", err)
+	}
+	if err := os.Remove(executable); err == nil || os.IsNotExist(err) {
+		return nil
+	} else if runtime.GOOS == "windows" {
+		return fmt.Errorf("remove %s after UPM exits: %w", executable, err)
 	}
 	if err := exec.Command("sudo", "rm", "-f", executable).Run(); err != nil {
 		return fmt.Errorf("remove %s: %w", executable, err)
@@ -213,6 +230,12 @@ func titleAction(action string) string {
 func validatePackageName(pkgName string) error {
 	if strings.TrimSpace(pkgName) == "" {
 		return errors.New("package name cannot be empty")
+	}
+	if strings.HasPrefix(pkgName, "-") {
+		return fmt.Errorf("package name cannot begin with '-': %q", pkgName)
+	}
+	if strings.IndexFunc(pkgName, func(r rune) bool { return r <= 0x20 || r == 0x7f }) >= 0 {
+		return errors.New("package name cannot contain whitespace or control characters")
 	}
 	return nil
 }

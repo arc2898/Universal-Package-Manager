@@ -20,14 +20,14 @@ func (c *CargoManager) Install(pkgName string) error {
 	if err := validatePackageName(pkgName); err != nil {
 		return err
 	}
-	return runSystemCommand("cargo", "install", pkgName)
+	return runCommand("cargo", "install", pkgName)
 }
 
 func (c *CargoManager) Remove(pkgName string) error {
 	if err := validatePackageName(pkgName); err != nil {
 		return err
 	}
-	return runSystemCommand("cargo", "uninstall", pkgName)
+	return runCommand("cargo", "uninstall", pkgName)
 }
 
 func (c *CargoManager) Search(pkgName string) ([]manager.SearchResult, error) {
@@ -42,5 +42,5 @@ func (c *CargoManager) Search(pkgName string) ([]manager.SearchResult, error) {
 }
 
 func (c *CargoManager) Update() error {
-	return runSystemCommand("cargo", "update")
+	return runCommand("cargo", "update")
 }

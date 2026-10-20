@@ -1,6 +1,8 @@
 package adapters
 
 import (
+	"encoding/json"
+	"fmt"
 	"os/exec"
 
 	"github.com/arc2898/Universal-Package-Manager/pkg/manager"
@@ -20,14 +22,14 @@ func (n *NpmManager) Install(pkgName string) error {
 	if err := validatePackageName(pkgName); err != nil {
 		return err
 	}
-	return runSystemCommand("npm", "install", "-g", pkgName)
+	return runCommand("npm", "install", "-g", pkgName)
 }
 
 func (n *NpmManager) Remove(pkgName string) error {
 	if err := validatePackageName(pkgName); err != nil {
 		return err
 	}
-	return runSystemCommand("npm", "uninstall", "-g", pkgName)
+	return runCommand("npm", "uninstall", "-g", pkgName)
 }
 
 func (n *NpmManager) Search(pkgName string) ([]manager.SearchResult, error) {
@@ -38,9 +40,26 @@ func (n *NpmManager) Search(pkgName string) ([]manager.SearchResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	return parseSearchLines(string(output), "npm"), nil
+	var packages []struct {
+		Name        string "json:\"name\""
+		Description string "json:\"description\""
+		Version     string "json:\"version\""
+	}
+	if err := json.Unmarshal(output, &packages); err != nil {
+		return nil, fmt.Errorf("parse npm search results: %w", err)
+	}
+	results := make([]manager.SearchResult, 0, len(packages))
+	for _, pkg := range packages {
+		if pkg.Name == "" {
+			continue
+		}
+		results = append(results, manager.SearchResult{
+			Name: pkg.Name, Description: pkg.Description, Version: pkg.Version, Source: "npm",
+		})
+	}
+	return results, nil
 }
 
 func (n *NpmManager) Update() error {
-	return runSystemCommand("npm", "update", "-g")
+	return runCommand("npm", "update", "-g")
 }

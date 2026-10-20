@@ -3,7 +3,7 @@
 [![Go](https://img.shields.io/badge/Go-1.22.2-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-UPM is a Linux command-line tool written in Go that provides a unified interface for common package-management operations across APT, DNF, Pacman, Snap, Flatpak, and other package manager backends.
+UPM is a Go command-line tool that provides a unified interface for common package-management operations through system and language-specific package-manager adapters. Linux is the primary target; macOS and Windows adapters are best-effort and should be validated on their native operating systems before production use.
 
 [![Version](https://img.shields.io/badge/version-0.2.0-00ADD8)](https://github.com/arc2898/Universal-Package-Manager/releases)
 
@@ -17,7 +17,7 @@ UPM supports installation, removal, real package searches, bulk installation and
 - **APT** - Debian/Ubuntu packages
 - **DNF** - Fedora/RHEL/CentOS/RPM-based systems
 - **Pacman** - Arch Linux/Manjaro packages
-- **RPM** - Direct RPM package management
+- **RPM** - Local RPM-file install/removal and searches among installed packages; repository-wide updates are delegated to the distribution manager
 - **XBPS** - Void Linux packages
 - **Zypper** - openSUSE/SUSE packages
 - **Snap** - Snap packages
@@ -30,22 +30,22 @@ UPM supports installation, removal, real package searches, bulk installation and
 **Language-Specific Managers:**
 - **Cargo** - Rust packages
 - **NPM** - Node.js packages
-- **Pip** - Python packages
+- **Pip** - Python packages (search uses `pip index versions` for an exact package lookup)
 - **Gem** - Ruby packages
 
 ### New Features
 
 - **Fallback search**: If a package is not found in one manager, UPM tries other available managers automatically
-- **Cross-platform support**: Works on Linux, macOS, and Windows
-- **Operation logs**: All operations are logged to `/var/log/upm.log`
-- **Self-removal**: `upm -r` removes the installed UPM binary
+- **Multiple platform adapters**: Includes adapters for Linux distributions, macOS tools, and Windows package managers; native-platform verification is still required
+- **Operation logs**: Root-run commands log to `/var/log/upm.log`; non-root commands use `~/.local/log/upm.log` by default. Set `UPM_LOG_FILE` to override the path
+- **Self-removal**: `upm -r` removes the installed UPM binary on Unix; on Windows, close UPM and remove the executable manually
 
 ## Installation
 
-From a checkout of this repository, run:
+From the repository root, run:
 
 ```bash
-./scripts/install.sh
+./install.sh
 ```
 
 Alternatively:
@@ -54,7 +54,7 @@ Alternatively:
 make install
 ```
 
-The installation builds the root Go package, installs `/usr/local/bin/upm` with mode `0755`, creates `/var/log/upm.log` with mode `0640`, and removes the temporary build artifact. The install script requires Go and `sudo` access.
+The installation builds the root Go package, installs `/usr/local/bin/upm` with mode `0755`, creates `/var/log/upm.log` with mode `0640`, and removes the temporary build artifact. The install script requires Go and system-install privileges (normally `sudo`); `--user` installs into `~/.local/bin` and uses a per-user log path.
 
 ## Usage
 
@@ -88,22 +88,19 @@ Bulk arguments must contain complete manager/package pairs. Package names are co
 upm -b install apt git,vim snap code
 ```
 
-UPM may request administrator privileges for system-wide APT, DNF, Pacman, and Snap operations. Flatpak operations use the normal Flatpak command and therefore follow Flatpak's system/user behavior.
+UPM may request administrator privileges for system-wide APT, DNF, Pacman, RPM, XBPS, Zypper, Snap, and Portage operations. Flatpak operations use the normal Flatpak command and therefore follow Flatpak's system/user behavior. `upm -u` skips RPM, Cargo, and Pip because they lack a safe, repository-wide update operation through the current adapters.
 
 ## Development
 
-Build and test the project with:
+Build, test, and statically analyze the project with:
 
 ```bash
 make build
 make test
-```
-
-Run static analysis with:
-
-```bash
 go vet ./...
 ```
+
+The GitHub Actions workflow runs tests, `go vet`, and a build on Linux, macOS, and Windows. This validates compilation and tests on those runners, but it does not replace end-to-end testing of real package-manager operations on each distribution.
 
 To add a manager, create an adapter in `internal/adapters/`, implement `manager.Manager`, register it in `internal/core/core.go`, and add tests for command construction and output parsing. Tests must not invoke real package managers or mutate the host system.
 
@@ -118,7 +115,8 @@ To add a manager, create an adapter in `internal/adapters/`, implement `manager.
 │   ├── detectors/             # Availability detection
 │   └── logger/                # Operation log handling
 ├── pkg/manager/               # Manager interface and search result types
-├── scripts/install.sh         # Build and installation script
+├── install.sh                 # Build and installation script
+├── .github/workflows/ci.yml   # Cross-platform test/build workflow
 ├── go.mod
 ├── Makefile
 ├── LICENSE
@@ -135,7 +133,12 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE).
 
 ## Verification
 
-Before submitting changes, run `make build`, `make test`, and `go vet ./...`. Tests should use mocked manager commands and must not modify the host package database.
+Before submitting changes, run `make build`, `make test`, and `go vet ./...`. Tests should use mocked manager commands and must not modify the host package database. Manual testing of actual installs, removals, or system-wide updates must be done in disposable VMs/containers for each target operating system; those operations are intentionally not run by CI.
 
-## Future 
-This project will shift to Pythin and C also trying to make everything done by single command in setup, also focusing on stability and package search.
+## Roadmap
+
+- Improve package-search accuracy and consistent output across adapters.
+- Expand mocked tests for command construction, parsing, and failure cases.
+- Improve installer reliability and make platform support clearer.
+
+The current implementation is written in Go; a possible future rewrite is not part of the current release.

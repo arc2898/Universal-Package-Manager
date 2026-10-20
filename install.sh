@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 BINARY="${ROOT_DIR}/upm-bin"
 INSTALL_DIR="/usr/local/bin"
 LOG_DIR="/var/log"
@@ -159,13 +159,17 @@ build_upm() {
     log_info "Downloading Go modules..."
     go mod download
 
-    # Run tests first
-    log_info "Running tests..."
-    if go test ./... -v; then
-        log_success "All tests passed"
+    # Run tests first unless the caller explicitly opts out.
+    if [[ "$SKIP_TESTS" != "true" ]]; then
+        log_info "Running tests..."
+        if go test ./... -v; then
+            log_success "All tests passed"
+        else
+            log_error "Tests failed! Build aborted."
+            exit 1
+        fi
     else
-        log_error "Tests failed! Build aborted."
-        exit 1
+        log_warn "Skipping Go tests (--no-test was supplied)"
     fi
 
     # Build binary

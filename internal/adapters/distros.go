@@ -1,7 +1,9 @@
 package adapters
 
 import (
+	"fmt"
 	"os/exec"
+	"strings"
 
 	"github.com/arc2898/Universal-Package-Manager/pkg/manager"
 )
@@ -17,14 +19,26 @@ func (d *DnfManager) IsAvailable() bool {
 }
 
 func (d *DnfManager) Install(pkgName string) error {
+	if err := validatePackageName(pkgName); err != nil {
+		return err
+	}
+
 	return runSystemCommand("dnf", "install", "-y", pkgName)
 }
 
 func (d *DnfManager) Remove(pkgName string) error {
+	if err := validatePackageName(pkgName); err != nil {
+		return err
+	}
+
 	return runSystemCommand("dnf", "remove", "-y", pkgName)
 }
 
 func (d *DnfManager) Search(pkgName string) ([]manager.SearchResult, error) {
+	if err := validatePackageName(pkgName); err != nil {
+		return nil, err
+	}
+
 	output, err := exec.Command("dnf", "search", pkgName).Output()
 	if err != nil {
 		return nil, err
@@ -47,14 +61,26 @@ func (p *PacmanManager) IsAvailable() bool {
 }
 
 func (p *PacmanManager) Install(pkgName string) error {
+	if err := validatePackageName(pkgName); err != nil {
+		return err
+	}
+
 	return runSystemCommand("pacman", "-S", "--noconfirm", pkgName)
 }
 
 func (p *PacmanManager) Remove(pkgName string) error {
+	if err := validatePackageName(pkgName); err != nil {
+		return err
+	}
+
 	return runSystemCommand("pacman", "-R", "--noconfirm", pkgName)
 }
 
 func (p *PacmanManager) Search(pkgName string) ([]manager.SearchResult, error) {
+	if err := validatePackageName(pkgName); err != nil {
+		return nil, err
+	}
+
 	output, err := exec.Command("pacman", "-Ss", pkgName).Output()
 	if err != nil {
 		return nil, err
@@ -95,13 +121,26 @@ func (r *RpmManager) Search(pkgName string) ([]manager.SearchResult, error) {
 	if err := validatePackageName(pkgName); err != nil {
 		return nil, err
 	}
-	output, err := exec.Command("rpm", "-qa").Output()
+	output, err := exec.Command("rpm", "-qa", "--qf", "%{NAME} %{VERSION}-%{RELEASE}\\n").Output()
 	if err != nil {
 		return nil, err
 	}
-	return parseSearchLines(string(output), "rpm"), nil
+	needle := strings.ToLower(pkgName)
+	var results []manager.SearchResult
+	for _, line := range strings.Split(string(output), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 0 || !strings.Contains(strings.ToLower(fields[0]), needle) {
+			continue
+		}
+		result := manager.SearchResult{Name: fields[0], Source: "rpm"}
+		if len(fields) > 1 {
+			result.Version = fields[1]
+		}
+		results = append(results, result)
+	}
+	return results, nil
 }
 
 func (r *RpmManager) Update() error {
-	return runSystemCommand("rpm", "-Uvh", "--force")
+	return fmt.Errorf("rpm does not support repository-wide updates; use the distribution's package manager (such as dnf or zypper)")
 }

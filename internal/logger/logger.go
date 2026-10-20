@@ -3,13 +3,18 @@ package logger
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 )
 
 const logFile = "/var/log/upm.log"
 
 func Log(message string) error {
-	file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640)
+	path := logPath()
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+		return fmt.Errorf("create log directory: %w", err)
+	}
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640)
 	if err != nil {
 		return fmt.Errorf("open log: %w", err)
 	}
@@ -23,7 +28,7 @@ func Log(message string) error {
 }
 
 func ReadLogs() error {
-	data, err := os.ReadFile(logFile)
+	data, err := os.ReadFile(logPath())
 	if os.IsNotExist(err) {
 		fmt.Println("No logs found.")
 		return nil

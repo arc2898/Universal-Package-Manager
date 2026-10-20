@@ -42,5 +42,8 @@ func (s *ScoopManager) Search(pkgName string) ([]manager.SearchResult, error) {
 }
 
 func (s *ScoopManager) Update() error {
-	return runCommand("scoop", "update")
+	if err := runCommand("scoop", "update"); err != nil {
+		return err
+	}
+	return runCommand("scoop", "update", "*")
 }
