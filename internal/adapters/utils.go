@@ -4,14 +4,29 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"strings"
 
 	"github.com/arc2898/Universal-Package-Manager/pkg/manager"
 )
 
-// runSystemCommand runs a command with sudo
+// runSystemCommand uses the current root context when available. This matters
+// for installers that execute UPM inside a target chroot, where sudo may not
+// exist yet. Unprivileged interactive use still goes through sudo.
 func runSystemCommand(name string, args ...string) error {
-	command := exec.Command("sudo", append([]string{name}, args...)...)
+	commandName := name
+	commandArgs := args
+	current, err := user.Current()
+	if err != nil || current.Uid != "0" {
+		sudo, lookupErr := exec.LookPath("sudo")
+		if lookupErr != nil {
+			return fmt.Errorf("administrator privileges are required to run %s (sudo not found)", name)
+		}
+		commandName = sudo
+		commandArgs = append([]string{name}, args...)
+	}
+
+	command := exec.Command(commandName, commandArgs...)
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr
 	return command.Run()
@@ -41,7 +56,6 @@ func parseSearchLines(output, source string) []manager.SearchResult {
 		if line == "" {
 			continue
 		}
-		// Skip common header/error lines
 		if strings.HasPrefix(line, "Last metadata expiration") ||
 			strings.HasPrefix(line, "Error") ||
 			strings.HasPrefix(line, "Warning") ||
@@ -59,7 +73,6 @@ func parseSearchLines(output, source string) []manager.SearchResult {
 	return results
 }
 
-// parseSearchLinesGem parses gem's "name version" format
 func parseSearchLinesGem(output, source string) []manager.SearchResult {
 	var results []manager.SearchResult
 	for _, line := range strings.Split(output, "\n") {
@@ -91,8 +104,6 @@ func validatePackageName(pkgName string) error {
 	return nil
 }
 
-// parsePipIndexVersions parses the first line printed by "pip index versions".
-// Example: "requests (2.32.3)". Remaining lines list versions, not search results.
 func parsePipIndexVersions(output, source string) []manager.SearchResult {
 	for _, line := range strings.Split(output, "\n") {
 		line = strings.TrimSpace(line)
