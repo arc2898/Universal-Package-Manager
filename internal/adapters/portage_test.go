@@ -10,13 +10,18 @@ import (
 
 func TestPortageInstallDoesNotPrompt(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		t.Skip("fake emerge uses a POSIX shell script")
+		t.Skip("fake sudo/emerge use POSIX shell scripts")
 	}
 	dir := t.TempDir()
 	logPath := filepath.Join(dir, "emerge-args")
 	emerge := filepath.Join(dir, "emerge")
-	script := "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$LOG_FILE\"\n"
-	if err := os.WriteFile(emerge, []byte(script), 0o755); err != nil {
+	sudo := filepath.Join(dir, "sudo")
+	emergeScript := "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$LOG_FILE\"\n"
+	sudoScript := "#!/bin/sh\nexec \"$@\"\n"
+	if err := os.WriteFile(emerge, []byte(emergeScript), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(sudo, []byte(sudoScript), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
@@ -28,7 +33,7 @@ func TestPortageInstallDoesNotPrompt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(args), "--ask=n\n") || !strings.HasSuffix(string(args), "vim\n") {
+	if !strings.Contains(string(args), "--ask=n\\n") || !strings.HasSuffix(string(args), "vim\\n") {
 		t.Fatalf("expected non-interactive emerge args, got %q", args)
 	}
 }
