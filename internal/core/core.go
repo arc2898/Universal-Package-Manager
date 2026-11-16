@@ -34,7 +34,6 @@ func NewUPM() *UPM {
 	d.Register(&adapters.NpmManager{})
 	d.Register(&adapters.PipManager{})
 	d.Register(&adapters.GemManager{})
-	// New adapters for parity with Python version
 	d.Register(&adapters.XbpsManager{})
 	d.Register(&adapters.ZypperManager{})
 	d.Register(&adapters.PortageManager{})
@@ -43,199 +42,130 @@ func NewUPM() *UPM {
 }
 
 func (u *UPM) Init() { u.managers = u.detector.Detect() }
-
 func (u *UPM) ListManagers() {
 	fmt.Println("Available Package Managers:")
-	for _, m := range u.managers {
-		fmt.Printf("- %s\n", m.Name())
-	}
+	for _, m := range u.managers { fmt.Printf("- %s\n", m.Name()) }
 }
-
 func (u *UPM) Install(pkgName string) error {
-	if err := validatePackageName(pkgName); err != nil {
-		return err
-	}
+	if err := validatePackageName(pkgName); err != nil { return err }
 	m, err := u.defaultManager()
-	if err != nil {
-		return err
-	}
+	if err != nil { return err }
 	return m.Install(pkgName)
 }
-
 func (u *UPM) Remove(pkgName string) error {
-	if err := validatePackageName(pkgName); err != nil {
-		return err
-	}
+	if err := validatePackageName(pkgName); err != nil { return err }
 	m, err := u.defaultManager()
-	if err != nil {
-		return err
-	}
+	if err != nil { return err }
 	return m.Remove(pkgName)
 }
-
 func (u *UPM) Search(pkgName string) error {
-	if err := validatePackageName(pkgName); err != nil {
-		return err
-	}
-	if len(u.managers) == 0 {
-		return errors.New("no package managers detected")
-	}
-
+	if err := validatePackageName(pkgName); err != nil { return err }
+	if len(u.managers) == 0 { return errors.New("no package managers detected") }
 	var failures []error
 	found := false
 	fmt.Printf("Searching for '%s' across all managers...\n", pkgName)
 	for _, m := range u.managers {
 		results, err := m.Search(pkgName)
-		if err != nil {
-			failures = append(failures, fmt.Errorf("%s search: %w", m.Name(), err))
-			continue
-		}
+		if err != nil { failures = append(failures, fmt.Errorf("%s search: %w", m.Name(), err)); continue }
 		if len(results) > 0 {
 			found = true
-			for _, result := range results {
-				fmt.Printf("[%s] %s: %s\n", result.Source, result.Name, result.Description)
-			}
+			for _, result := range results { fmt.Printf("[%s] %s: %s\n", result.Source, result.Name, result.Description) }
 		}
 	}
-	if !found {
-		return errors.Join(failures...)
-	}
+	if !found { return errors.Join(failures...) }
 	return nil
 }
-
 func (u *UPM) UpdateAll() error {
-	if len(u.managers) == 0 {
-		return errors.New("no package managers detected")
-	}
+	if len(u.managers) == 0 { return errors.New("no package managers detected") }
 	var failures []error
 	for _, m := range u.managers {
 		switch m.Name() {
-		case "rpm":
-			fmt.Println("Skipping rpm: direct RPM has no repository-wide update operation; use the distribution's package manager.")
-			continue
-		case "cargo":
-			fmt.Println("Skipping cargo: 'cargo update' changes dependencies in the current project, not globally installed packages.")
-			continue
-		case "pip":
-			fmt.Println("Skipping pip: pip has no safe, standard command to upgrade every installed package.")
+		case "rpm", "cargo", "pip":
 			continue
 		}
 		fmt.Printf("Updating %s...\n", m.Name())
-		if err := m.Update(); err != nil {
-			failures = append(failures, fmt.Errorf("%s update: %w", m.Name(), err))
-		}
+		if err := m.Update(); err != nil { failures = append(failures, fmt.Errorf("%s update: %w", m.Name(), err)) }
 	}
 	return errors.Join(failures...)
 }
-
-func (u *UPM) BulkInstall(items map[string][]string) error {
-	return u.bulk(items, "install")
-}
-
-func (u *UPM) BulkRemove(items map[string][]string) error {
-	return u.bulk(items, "remove")
-}
-
+func (u *UPM) BulkInstall(items map[string][]string) error { return u.bulk(items, "install") }
+func (u *UPM) BulkRemove(items map[string][]string) error { return u.bulk(items, "remove") }
 func (u *UPM) bulk(items map[string][]string, action string) error {
 	var failures []error
 	for managerName, packages := range items {
 		m, err := u.managerByName(managerName)
-		if err != nil {
-			failures = append(failures, err)
-			continue
-		}
+		if err != nil { failures = append(failures, err); continue }
 		for _, pkgName := range packages {
-			if err := validatePackageName(pkgName); err != nil {
-				failures = append(failures, fmt.Errorf("%s: %w", managerName, err))
-				continue
-			}
+			if err := validatePackageName(pkgName); err != nil { failures = append(failures, fmt.Errorf("%s: %w", managerName, err)); continue }
 			fmt.Printf("%sing %s via %s...\n", titleAction(action), pkgName, managerName)
 			var operationErr error
-			if action == "install" {
-				operationErr = m.Install(pkgName)
-			} else {
-				operationErr = m.Remove(pkgName)
-			}
-			if operationErr != nil {
-				failures = append(failures, fmt.Errorf("%s %s: %w", managerName, pkgName, operationErr))
-			}
+			if action == "install" { operationErr = m.Install(pkgName) } else { operationErr = m.Remove(pkgName) }
+			if operationErr != nil { failures = append(failures, fmt.Errorf("%s %s: %w", managerName, pkgName, operationErr)) }
 		}
 	}
 	return errors.Join(failures...)
 }
-
 func (u *UPM) UninstallSelf() error {
 	executable, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("locate executable: %w", err)
-	}
-	if err := os.Remove(executable); err == nil || os.IsNotExist(err) {
-		return nil
-	} else if runtime.GOOS == "windows" {
-		return fmt.Errorf("remove %s after UPM exits: %w", executable, err)
-	}
-	if err := exec.Command("sudo", "rm", "-f", executable).Run(); err != nil {
-		return fmt.Errorf("remove %s: %w", executable, err)
-	}
+	if err != nil { return fmt.Errorf("locate executable: %w", err) }
+	if err := os.Remove(executable); err == nil || os.IsNotExist(err) { return nil } else if runtime.GOOS == "windows" { return fmt.Errorf("remove %s after UPM exits: %w", executable, err) }
+	if err := exec.Command("sudo", "rm", "-f", executable).Run(); err != nil { return fmt.Errorf("remove %s: %w", executable, err) }
 	return nil
 }
-
 func (u *UPM) defaultManager() (manager.Manager, error) {
-	if len(u.managers) == 0 {
-		return nil, errors.New("no package managers detected")
-	}
-	preferred := nativeManagerPreference()
-	for _, name := range preferred {
-		if m, err := u.managerByName(name); err == nil {
-			return m, nil
-		}
+	if len(u.managers) == 0 { return nil, errors.New("no package managers detected") }
+	for _, name := range nativeManagerPreference() {
+		if m, err := u.managerByName(name); err == nil { return m, nil }
 	}
 	return u.managers[0], nil
 }
-
 func (u *UPM) managerByName(name string) (manager.Manager, error) {
-	for _, m := range u.managers {
-		if m.Name() == name {
-			return m, nil
-		}
-	}
+	for _, m := range u.managers { if m.Name() == name { return m, nil } }
 	return nil, fmt.Errorf("package manager %q is not detected", name)
 }
 
 func nativeManagerPreference() []string {
 	data, err := os.ReadFile("/etc/os-release")
-	if err != nil {
-		return nil
-	}
-	values := string(data)
-	switch {
-	case strings.Contains(values, "ID=ubuntu") || strings.Contains(values, "ID=debian") || strings.Contains(values, "ID_LIKE=debian"):
-		return []string{"apt"}
-	case strings.Contains(values, "ID=fedora") || strings.Contains(values, "ID=rhel") || strings.Contains(values, "ID=centos") || strings.Contains(values, "ID_LIKE="+"rhel"):
-		return []string{"dnf"}
-	case strings.Contains(values, "ID=arch") || strings.Contains(values, "ID=manjaro") || strings.Contains(values, "ID_LIKE=arch"):
-		return []string{"pacman"}
-	default:
-		return nil
-	}
+	if err != nil { return nil }
+	return nativeManagerPreferenceFromOSRelease(string(data))
 }
 
-func titleAction(action string) string {
-	if action == "" {
-		return ""
+func nativeManagerPreferenceFromOSRelease(data string) []string {
+	var id, like string
+	for _, line := range strings.Split(data, "\n") {
+		key, value, ok := strings.Cut(line, "=")
+		if !ok { continue }
+		value = strings.Trim(value, "\"'")
+		switch key {
+		case "ID": id = strings.ToLower(value)
+		case "ID_LIKE": like = strings.ToLower(value)
+		}
 	}
+	switch id {
+	case "debian", "ubuntu": return []string{"apt"}
+	case "fedora", "rhel", "centos", "rocky", "almalinux": return []string{"dnf"}
+	case "arch", "manjaro", "endeavouros": return []string{"pacman"}
+	case "opensuse", "opensuse-leap", "opensuse-tumbleweed", "sles", "sled", "suse": return []string{"zypper"}
+	case "void": return []string{"xbps"}
+	case "gentoo": return []string{"portage"}
+	}
+	switch {
+	case strings.Contains(like, "debian"): return []string{"apt"}
+	case strings.Contains(like, "rhel") || strings.Contains(like, "fedora"): return []string{"dnf"}
+	case strings.Contains(like, "arch"): return []string{"pacman"}
+	case strings.Contains(like, "suse"): return []string{"zypper"}
+	case strings.Contains(like, "void"): return []string{"xbps"}
+	case strings.Contains(like, "gentoo"): return []string{"portage"}
+	default: return nil
+	}
+}
+func titleAction(action string) string {
+	if action == "" { return "" }
 	return strings.ToUpper(action[:1]) + action[1:]
 }
-
 func validatePackageName(pkgName string) error {
-	if strings.TrimSpace(pkgName) == "" {
-		return errors.New("package name cannot be empty")
-	}
-	if strings.HasPrefix(pkgName, "-") {
-		return fmt.Errorf("package name cannot begin with '-': %q", pkgName)
-	}
-	if strings.IndexFunc(pkgName, func(r rune) bool { return r <= 0x20 || r == 0x7f }) >= 0 {
-		return errors.New("package name cannot contain whitespace or control characters")
-	}
+	if strings.TrimSpace(pkgName) == "" { return errors.New("package name cannot be empty") }
+	if strings.HasPrefix(pkgName, "-") { return fmt.Errorf("package name cannot begin with '-': %q", pkgName) }
+	if strings.IndexFunc(pkgName, func(r rune) bool { return r <= 0x20 || r == 0x7f }) >= 0 { return errors.New("package name cannot contain whitespace or control characters") }
 	return nil
 }
