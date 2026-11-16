@@ -88,7 +88,7 @@ Bulk arguments must contain complete manager/package pairs. Package names are co
 upm -b install apt git,vim snap code
 ```
 
-UPM may request administrator privileges for system-wide APT, DNF, Pacman, RPM, XBPS, Zypper, Snap, and Portage operations. Flatpak operations use the normal Flatpak command and therefore follow Flatpak's system/user behavior. `upm -u` skips RPM, Cargo, and Pip because they lack a safe, repository-wide update operation through the current adapters.
+UPM runs native package commands directly when already running as root (including inside an installer target chroot); otherwise it uses `sudo`. Portage installs use `emerge --ask=n` so automation never blocks on an interactive confirmation. Native manager preference is selected for Debian/Ubuntu, Fedora/RHEL, Arch, openSUSE/SUSE, Void, and Gentoo. Flatpak operations use the normal Flatpak command and therefore follow Flatpak's system/user behavior. `upm -u` skips RPM, Cargo, and Pip because they lack a safe, repository-wide update operation through the current adapters.
 
 ## Development
 
