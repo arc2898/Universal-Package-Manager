@@ -15,7 +15,7 @@ func TestNativeManagerPreferenceFromOSRelease(t *testing.T) {
 		{"opensuse", "ID=opensuse-tumbleweed\n", "zypper"},
 		{"void", "ID=void\n", "xbps"},
 		{"gentoo", "ID=gentoo\n", "portage"},
-		{"suse-like", "ID=my-suse\nID_LIKE="suse"\n", "zypper"},
+		{"suse-like", `ID=my-suse\nID_LIKE="suse"\n`, "zypper"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
