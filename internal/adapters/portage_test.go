@@ -33,7 +33,7 @@ func TestPortageInstallDoesNotPrompt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(args), "--ask=n\\n") || !strings.HasSuffix(string(args), "vim\\n") {
+	if !strings.Contains(string(args), "--ask=n\n") || !strings.HasSuffix(string(args), "vim\n") {
 		t.Fatalf("expected non-interactive emerge args, got %q", args)
 	}
 }
