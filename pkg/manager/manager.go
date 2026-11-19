@@ -11,6 +11,7 @@ type Manager interface {
 
 type SearchResult struct {
 	Name        string
+	Aliases     []string
 	Description string
 	Version     string
 	Source      string
