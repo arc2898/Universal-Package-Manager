@@ -1,6 +1,7 @@
 package adapters
 
 import (
+	"fmt"
 	"os/exec"
 
 	"github.com/arc2898/Universal-Package-Manager/pkg/manager"
@@ -115,11 +116,19 @@ func (p *PortageManager) Search(pkgName string) ([]manager.SearchResult, error) 
 	if err := validatePackageName(pkgName); err != nil {
 		return nil, err
 	}
-	output, err := exec.Command("emerge", "-S", pkgName).Output()
+	output, err := exec.Command("emerge", "--searchdesc", pkgName).Output()
 	if err != nil {
 		return nil, err
 	}
-	return parseSearchLines(string(output), "portage"), nil
+	return parsePortageSearch(string(output)), nil
+}
+
+// Setup synchronizes the Gentoo ebuild repository so Portage can discover packages.
+func (p *PortageManager) Setup() error {
+	if !p.IsAvailable() {
+		return fmt.Errorf("Portage is not installed; run this on a Gentoo system with emerge available")
+	}
+	return runSystemCommand("emerge", "--sync")
 }
 
 func (p *PortageManager) Update() error {

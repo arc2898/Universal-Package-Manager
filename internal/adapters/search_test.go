@@ -135,3 +135,38 @@ func TestParseSearchLinesGem(t *testing.T) {
 		t.Fatalf("unexpected second result: %#v", results[1])
 	}
 }
+
+func TestParseHomebrewSearchSections(t *testing.T) {
+	results := parseHomebrewSearch("==> Formulae\nvlc\n==> Casks\nvlc")
+	if len(results) != 2 {
+		t.Fatalf("got %d results, want 2: %#v", len(results), results)
+	}
+	if results[0].Name != "vlc" || results[0].Description != "formula" {
+		t.Fatalf("unexpected formula result: %#v", results[0])
+	}
+	if results[1].Name != "vlc" || results[1].Description != "cask" {
+		t.Fatalf("unexpected cask result: %#v", results[1])
+	}
+}
+
+func TestParseFlatpakSearchUsesApplicationID(t *testing.T) {
+	results := parseFlatpakSearch("org.videolan.VLC VLC Multimedia player")
+	if len(results) != 1 || results[0].Name != "org.videolan.VLC" || results[0].Source != "flatpak" || len(results[0].Aliases) != 1 || results[0].Aliases[0] != "VLC" {
+		t.Fatalf("unexpected Flatpak results: %#v", results)
+	}
+}
+
+func TestParsePortageSearchReturnsCategoryAtom(t *testing.T) {
+	output := `*  app-misc/foo
+      Latest version available: 1.2
+      Description: A useful utility
+*  media-video/vlc
+      Description: VLC media player`
+	results := parsePortageSearch(output)
+	if len(results) != 2 {
+		t.Fatalf("got %d results, want 2: %#v", len(results), results)
+	}
+	if results[1].Name != "media-video/vlc" || results[1].Description != "VLC media player" {
+		t.Fatalf("unexpected Portage result: %#v", results[1])
+	}
+}

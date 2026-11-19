@@ -115,3 +115,93 @@ func parsePipIndexVersions(output, source string) []manager.SearchResult {
 	}
 	return nil
 }
+
+// parseFlatpakSearch returns application IDs as package names because those are
+// the identifiers accepted by `flatpak install`.
+func parseFlatpakSearch(output string) []manager.SearchResult {
+	var results []manager.SearchResult
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(strings.ToLower(line), "application") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			continue
+		}
+		// With --columns=application,name,description the first column is the
+		// stable app ID; the remaining columns are human-readable metadata.
+		name := strings.Trim(fields[0], "|")
+		if name == "" || strings.Contains(name, "---") {
+			continue
+		}
+		description := ""
+		var aliases []string
+		if len(fields) > 1 {
+			aliases = append(aliases, fields[1])
+			description = strings.Join(fields[1:], " ")
+		}
+		results = append(results, manager.SearchResult{
+			Name: name, Aliases: aliases, Description: description, Source: "flatpak",
+		})
+	}
+	return results
+}
+
+// parseHomebrewSearch understands the Formulae/Casks sections emitted by
+// `brew search --formula --cask`.
+func parseHomebrewSearch(output string) []manager.SearchResult {
+	var results []manager.SearchResult
+	section := ""
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "==> Formulae") {
+			section = "formula"
+			continue
+		}
+		if strings.HasPrefix(line, "==> Casks") {
+			section = "cask"
+			continue
+		}
+		if line == "" || strings.HasPrefix(line, "==>") || strings.HasPrefix(line, "Warning:") {
+			continue
+		}
+		for _, name := range strings.Fields(line) {
+			name = strings.Trim(name, ",")
+			if name == "" {
+				continue
+			}
+			description := ""
+			if section != "" {
+				description = section
+			}
+			results = append(results, manager.SearchResult{Name: name, Description: description, Source: "homebrew"})
+		}
+	}
+	return results
+}
+
+// parsePortageSearch extracts category/package atoms from emerge --searchdesc
+// output. Portage accepts these atoms directly in `emerge` install commands.
+func parsePortageSearch(output string) []manager.SearchResult {
+	var results []manager.SearchResult
+	var current *manager.SearchResult
+	for _, line := range strings.Split(output, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "*") {
+			fields := strings.Fields(strings.TrimLeft(trimmed, "* "))
+			if len(fields) == 0 || !strings.Contains(fields[0], "/") {
+				current = nil
+				continue
+			}
+			result := manager.SearchResult{Name: strings.Trim(fields[0], "[]"), Source: "portage"}
+			results = append(results, result)
+			current = &results[len(results)-1]
+			continue
+		}
+		if current != nil && strings.HasPrefix(trimmed, "Description:") {
+			current.Description = strings.TrimSpace(strings.TrimPrefix(trimmed, "Description:"))
+		}
+	}
+	return results
+}

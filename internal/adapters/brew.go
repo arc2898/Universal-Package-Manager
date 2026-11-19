@@ -34,11 +34,11 @@ func (h *HomebrewManager) Search(pkgName string) ([]manager.SearchResult, error)
 	if err := validatePackageName(pkgName); err != nil {
 		return nil, err
 	}
-	output, err := exec.Command("brew", "search", pkgName).Output()
+	output, err := exec.Command("brew", "search", "--formula", "--cask", pkgName).Output()
 	if err != nil {
 		return nil, err
 	}
-	return parseSearchLines(string(output), "homebrew"), nil
+	return parseHomebrewSearch(string(output)), nil
 }
 
 func (h *HomebrewManager) Update() error {

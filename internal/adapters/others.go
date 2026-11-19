@@ -73,11 +73,11 @@ func (f *FlatpakManager) Search(pkgName string) ([]manager.SearchResult, error) 
 	if err := validatePackageName(pkgName); err != nil {
 		return nil, err
 	}
-	output, err := exec.Command("flatpak", "search", pkgName).Output()
+	output, err := exec.Command("flatpak", "search", "--columns=application,name,description", pkgName).Output()
 	if err != nil {
 		return nil, err
 	}
-	return parseSearchLines(string(output), "flatpak"), nil
+	return parseFlatpakSearch(string(output)), nil
 }
 
 func (f *FlatpakManager) Update() error {
