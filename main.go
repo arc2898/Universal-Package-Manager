@@ -25,7 +25,7 @@ func main() {
 	var err error
 	switch args[0] {
 	case "install":
-		err = requirePackage(args, "install", u.Install)
+		err = handleInstall(u, args[1:])
 	case "remove":
 		err = requirePackage(args, "remove", u.Remove)
 	case "search":
@@ -34,6 +34,12 @@ func main() {
 		err = handleBulk(u, args[1:])
 	case "-u", "--update":
 		err = u.UpdateAll()
+	case "setup":
+		if len(args) != 2 {
+			err = errors.New("usage: upm setup <manager>")
+		} else {
+			err = u.SetupManager(args[1])
+		}
 	case "refresh":
 		u.Init()
 		u.ListManagers()
@@ -54,6 +60,18 @@ func main() {
 		logger.Log("command failed: " + err.Error())
 		os.Exit(1)
 	}
+}
+
+func handleInstall(u *core.UPM, args []string) error {
+	similar := false
+	if len(args) > 0 && args[0] == "-s" {
+		similar = true
+		args = args[1:]
+	}
+	if len(args) != 1 || strings.TrimSpace(args[0]) == "" {
+		return errors.New("usage: upm install [-s] <pkg_name>")
+	}
+	return u.Install(args[0], similar)
 }
 
 func requirePackage(args []string, command string, operation func(string) error) error {
@@ -112,7 +130,9 @@ func printHelp() {
 	fmt.Println("UPM - Universal Package Manager")
 	fmt.Println("Usage: upm <command> [arguments]")
 	fmt.Println("\nCommands:")
-	fmt.Println("  install <pkg>       Install a package using the native manager")
+	fmt.Println("  install <pkg>       Find exact matches across managers and choose a source")
+	fmt.Println("  install -s <pkg>    Find similar package names across managers")
+	fmt.Println("  setup <manager>     Initialize a manager (e.g. portage repository sync)")
 	fmt.Println("  remove <pkg>        Remove a package using the native manager")
 	fmt.Println("  search <pkg>        Search for a package across detected managers")
 	fmt.Println("  -b, --bulk <action> Bulk install/remove")

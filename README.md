@@ -9,7 +9,7 @@ UPM is a Go command-line tool that provides a unified interface for common packa
 
 ## Features
 
-UPM supports installation, removal, real package searches, bulk installation and removal, full updates of detected managers, re-detection of known managers, operation logs, and self-removal of the installed binary. Package-manager operations are executed with argument-based process APIs rather than shell interpolation.
+UPM searches all detected package managers concurrently before installation, lets users choose the source, supports similar-name discovery, removal, bulk installation and removal, updates, manager re-detection, operation logs, and self-removal of the installed binary. Package-manager operations are executed with argument-based process APIs rather than shell interpolation.
 
 ### Supported Package Managers
 
@@ -35,7 +35,9 @@ UPM supports installation, removal, real package searches, bulk installation and
 
 ### New Features
 
-- **Fallback search**: If a package is not found in one manager, UPM tries other available managers automatically
+- **Parallel package discovery**: `upm install <pkg>` searches every detected manager concurrently and displays exact-name matches before asking which source to install from
+- **Similar-name discovery**: `upm install -s <pkg>` shows broader matches from every detected manager
+- **Portage setup**: `upm setup portage` synchronizes the Gentoo ebuild repository with `emerge --sync`
 - **Multiple platform adapters**: Includes adapters for Linux distributions, macOS tools, and Windows package managers; native-platform verification is still required
 - **Operation logs**: Root-run commands log to `/var/log/upm.log`; non-root commands use `~/.local/log/upm.log` by default. Set `UPM_LOG_FILE` to override the path
 - **Self-removal**: `upm -r` removes the installed UPM binary on Unix; on Windows, close UPM and remove the executable manually
@@ -59,7 +61,7 @@ The installation builds the root Go package, installs `/usr/local/bin/upm` with 
 ## Usage
 
 ```text
-upm install <pkg>       Install using the preferred native manager
+upm install <pkg>       Search all managers for an exact match and choose a source\nupm install -s <pkg>    Search for similar package names\nupm setup portage       Synchronize the Gentoo Portage repository
 upm remove <pkg>        Remove using the preferred native manager
 upm search <pkg>        Search all detected managers
 upm -b install ...      Bulk install using explicit manager/package pairs
